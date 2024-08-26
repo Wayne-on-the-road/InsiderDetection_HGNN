@@ -4,6 +4,11 @@ from torch_geometric.data import HeteroData
 import torch
 
 def generate_supervision_relationships(data_path, userlist_path):
+    # This function takes in the processed sample dataset from previous paper and userlist csv files from CERT4.2 as input. It generates
+    # a dataframe containing the supervision relationships between users and their supervisors. method: for a Userday node if the user it belongs to is supervised by a supervisor, then
+    # create a link between the UserDay and its corresponding supervisor.
+
+
     # Load the data
     data = pd.read_csv(data_path)
     userlist = pd.read_csv(userlist_path)
@@ -37,9 +42,7 @@ def generate_supervision_relationships(data_path, userlist_path):
             user_IDs.append(user_ID)
 
     # Create the resulting dataframe
-    # UserDay_df = pd.DataFrame({'UserDay_index': head_nodes,
-    #     'date_ID': date_IDs,
-    #     'user_ID': user_IDs})
+
     UserDay_df = pd.DataFrame({'UserDay_index': head_nodes})
     UserDay_df = pd.concat([UserDay_df, data[['date_index','user_index','group','label','f1','f2','f3','f4','f5']]],axis=1)
 
@@ -57,6 +60,10 @@ def generate_supervision_relationships(data_path, userlist_path):
     return supervision_relation_df, UserDay_df, unique_supervisor_df
 
 def generate_SameUser_relationships(data_path, userlist_path):
+    # This function takes in the processed sample dataset from previous paper and userlist csv files from CERT4.2 as input. It generates
+    # a dataframe containing the head and tail nodes for the SameUser relationships, which means create a link if a UserDay belongs to a certain user.
+
+    # Load the data
     data = pd.read_csv(data_path)
     userlist = pd.read_csv(userlist_path)
 
@@ -140,7 +147,7 @@ def generate_share_supervisor_relationships(data_path, userlist_path):
 
 # Paths to the files
 # current_directory = os.path.dirname(os.path.abspath(__file__))
-data_path = './CERT4.2/user_feature_label/data-wise_total.csv'
+data_path = './CERT4.2/data-wise_total.csv'
 userlist_path = './CERT4.2/userlist.csv'
 
 # Generate the supervisor relationships dataframe
@@ -178,8 +185,4 @@ data['UserDay', 'has_SameUser', 'user'].edge_index = torch.transpose(
 # Save the heterogeneous graph data
 torch.save(data, './data/insider_detection_heterogeneous_graph.pt')
 
-data['UserDay', 'share_supervisor', 'UserDay'].edge_index = torch.transpose(
-    torch.tensor(share_supervisor_relationships_df[['head_index','tail_index']].values),0,1)
-# Save the heterogeneous graph data
-torch.save(data, './data/insider_detection_heterogeneous_graph_3relations.pt')
 

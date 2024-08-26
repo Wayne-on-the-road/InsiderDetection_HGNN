@@ -92,7 +92,7 @@ class Model_all(torch.nn.Module):
 
         return pred, x_dict
 
-class Model_supervison(torch.nn.Module):
+class Model_supervison(torch.nn.Module): # This is the model used for ablation study: supervision relationship
     def __init__(self, hidden_channels, GNN_model):
         super().__init__()
         # Since the dataset does not come with rich features, we also learn
@@ -101,7 +101,6 @@ class Model_supervison(torch.nn.Module):
         self.UserDay_node_emb = torch.nn.Embedding(data['UserDay'].num_nodes, hidden_channels)
 
         self.supervisor_node_emb = torch.nn.Embedding(data['supervisor'].num_nodes, hidden_channels)
-        # self.user_node_emb = torch.nn.Embedding(data['user'].num_nodes, hidden_channels)
 
         self.output = torch.nn.Linear(hidden_channels, 2)
 
@@ -112,14 +111,11 @@ class Model_supervison(torch.nn.Module):
         self.gnn = to_hetero(self.gnn, metadata=data.metadata())
 
 
-        # self.classifier = Classifier()
-
     def forward(self, data: HeteroData) -> Tensor:
         #print(data['UserDay'].num_nodes, data['UserDay'].node_id)
         x_dict = {
           'UserDay': self.UserDay_feature_lin(data['UserDay'].x.float()) + self.UserDay_node_emb(data['UserDay'].node_id),
           'supervisor': self.supervisor_node_emb(data['supervisor'].node_id),
-          # 'user': self.user_node_emb(data['user'].node_id),
         }
 
         # `x_dict` holds feature matrices of all node types
@@ -130,7 +126,7 @@ class Model_supervison(torch.nn.Module):
         pred = out
 
         return pred, x_dict
-class Model_SameUser(torch.nn.Module):
+class Model_SameUser(torch.nn.Module): # This is the model used for ablation study: SameUser relationship
     def __init__(self, hidden_channels, GNN_model):
         super().__init__()
         # Since the dataset does not come with rich features, we also learn
@@ -138,7 +134,6 @@ class Model_SameUser(torch.nn.Module):
         self.UserDay_feature_lin = torch.nn.Linear(5, hidden_channels)
         self.UserDay_node_emb = torch.nn.Embedding(data['UserDay'].num_nodes, hidden_channels)
 
-        # self.supervisor_node_emb = torch.nn.Embedding(data['supervisor'].num_nodes, hidden_channels)
         self.user_node_emb = torch.nn.Embedding(data['user'].num_nodes, hidden_channels)
 
         self.output = torch.nn.Linear(hidden_channels, 2)
@@ -156,7 +151,6 @@ class Model_SameUser(torch.nn.Module):
         #print(data['UserDay'].num_nodes, data['UserDay'].node_id)
         x_dict = {
           'UserDay': self.UserDay_feature_lin(data['UserDay'].x.float()) + self.UserDay_node_emb(data['UserDay'].node_id),
-          # 'supervisor': self.supervisor_node_emb(data['supervisor'].node_id),
           'user': self.user_node_emb(data['user'].node_id),
         }
 
@@ -190,17 +184,17 @@ def train(data):
 
 
 #%% ablation setting
-ablation_settings = ['All_relation']#,'Supervision_relation','SameUser_relation'] #'All','Title','Department','Manager','None'
+ablation_settings = ['All_relation']#,'Supervision_relation','SameUser_relation']
 GNN_models = ['GCN', 'GAT', 'GraphSAGE']
 round = 30
 batch_size= 2048
 hidden_channel=16 #16,32,64,128
 Epoch=400
 graph_file_path = './data/insider_detection_heterogeneous_graph.pt'
-# graph_file_path = './data/insider_detection_heterogeneous_graph_3relations.pt'
-data_path = './CERT4.2/user_feature_label/data-wise_total.csv'
+
+data_path = './CERT4.2/data-wise_total.csv'
 result_dir = './result_dir' # delta 0.0000001
-# result_dir = './result_dir_delta-06' # delta 0.000001
+
 
 loss_func = torch.nn.CrossEntropyLoss()
 # csv file to store the final performance result for each model and feature combination:
@@ -315,9 +309,8 @@ for ablation_setting in ablation_settings:
             RF = RandomForestClassifier()
             SVM = svm.SVC(probability=(True))
             GNB = GaussianNB()
-            classifier_list = [RF, LR, GNB, SVM]
-            #classifier_name_list = ["c_RF"]  # "c_LR", "c_RF", "c_SVM", "c_NN", "c_GNB"
-            classifier_name_list = ["RF", "LR", "GNB", "SVM"]
+            classifier_list = [LR, GNB, SVM]
+            classifier_name_list = ["LR", "GNB", "SVM"]
 
             file_perform_per_round = os.path.join(perform_file_dir,
                                          setting + '-perform_data.npy')  #
